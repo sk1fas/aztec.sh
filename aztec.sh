@@ -129,9 +129,9 @@ EOF
         # удаляем временный файл
         rm -f "$tmpf"
         ;;
-    3)
+     3)
         tmpf=$(mktemp) &&
-        curl -fsSL  >"$tmpf" &&
+        curl -fsSL https://raw.githubusercontent.com/sk1fas/validator.sh/main/validator.sh >"$tmpf" &&
         bash "$tmpf" &&
         rm -f "$tmpf"
         ;;
