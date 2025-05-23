@@ -36,6 +36,7 @@ case $choice in
     1)
         echo -e "${BLUE}Установка зависимостей...${NC}"
         sudo apt-get update && sudo apt-get upgrade -y
+        sudo apt install iptables-persistent
         sudo apt install curl iptables build-essential git wget lz4 jq make gcc nano automake autoconf tmux htop nvme-cli libgbm1 pkg-config libssl-dev libleveldb-dev tar clang bsdmainutils ncdu unzip libleveldb-dev  -y
         
         # 1. Установка Docker, если не установлен
@@ -68,6 +69,9 @@ case $choice in
           sudo apt-get install -y iptables
         fi
 
+        sudo apt update
+        sudo apt install -y iptables-persistent
+
         sudo iptables -I INPUT -p tcp --dport 40400 -j ACCEPT
         sudo iptables -I INPUT -p udp --dport 40400 -j ACCEPT
         sudo iptables -I INPUT -p tcp --dport 8080 -j ACCEPT
@@ -77,7 +81,7 @@ case $choice in
         mkdir -p "$HOME/aztec-sequencer"
         cd "$HOME/aztec-sequencer"
 
-        docker pull aztecprotocol/aztec:0.85.0-alpha-testnet.8
+        docker pull aztecprotocol/aztec:0.87.2
         
         read -p "Вставьте ваш URL RPC Sepolia: " RPC
         read -p "Вставьте ваш URL Beacon Sepolia: " CONSENSUS
@@ -94,19 +98,22 @@ L1_CONSENSUS_HOST_URLS=$CONSENSUS
 VALIDATOR_PRIVATE_KEY=$PRIVATE_KEY
 P2P_IP=$SERVER_IP
 WALLET=$WALLET
+GOVERNANCE_PROPOSER_PAYLOAD_ADDRESS=0x54F7fe24E349993b363A5Fa1bccdAe2589D5E5Ef
 EOF
 
         # 3) Запуск контейнера (разовый, с привязкой тома и env-файлом)
         docker run -d \
           --name aztec-sequencer \
           --network host \
+          --entrypoint /bin/sh \
           --env-file "$HOME/aztec-sequencer/.evm" \
           -e DATA_DIRECTORY=/data \
           -e LOG_LEVEL=debug \
           -v "$HOME/my-node/node":/data \
-          aztecprotocol/aztec:0.85.0-alpha-testnet.8 \
-          sh -c 'node --no-warnings /usr/src/yarn-project/aztec/dest/bin/index.js \
+          aztecprotocol/aztec:0.87.2 \
+          -c 'node --no-warnings /usr/src/yarn-project/aztec/dest/bin/index.js \
             start --network alpha-testnet --node --archiver --sequencer'
+
 
         cd ~
         # Завершающий вывод
@@ -138,7 +145,7 @@ EOF
     4)
         echo -e "${BLUE}Обновление ноды Aztec...${NC}"
         # 1) Подтягиваем новую версию образа
-        docker pull aztecprotocol/aztec:0.85.0-alpha-testnet.8
+        docker pull aztecprotocol/aztec:0.87.2
 
         # 2) Останавливаем и удаляем старый контейнер (тома и .evm сохранятся)
         docker stop aztec-sequencer
@@ -150,13 +157,15 @@ EOF
         docker run -d \
           --name aztec-sequencer \
           --network host \
+          --entrypoint /bin/sh \
           --env-file "$HOME/aztec-sequencer/.evm" \
           -e DATA_DIRECTORY=/data \
           -e LOG_LEVEL=debug \
           -v "$HOME/my-node/node":/data \
-          aztecprotocol/aztec:0.85.0-alpha-testnet.8 \
-          sh -c 'node --no-warnings /usr/src/yarn-project/aztec/dest/bin/index.js \
+          aztecprotocol/aztec:0.87.2 \
+          -c 'node --no-warnings /usr/src/yarn-project/aztec/dest/bin/index.js \
             start --network alpha-testnet --node --archiver --sequencer'
+
 
         # Завершающий вывод
         echo -e "${PURPLE}-----------------------------------------------------------------------${NC}"
@@ -193,6 +202,3 @@ EOF
         echo -e "${RED}Неверный выбор. Пожалуйста, выберите пункт из меню.${NC}"
         ;;
 esac
-
-
-       
